@@ -24,69 +24,126 @@
             </div>
             <div class="contentBx">
                 <div class="formBx">
-                    <h2>Camera Details</h2>
+                    <h2>Camera Safety Configuration</h2>
                     <form action="/get_cam_details" method="POST">
                         <div class="inputBx">
                             <span>Camera ID</span>
-                            <input type="text" name="Cam_id">
+                            <input type="text" name="Cam_id" placeholder="Enter camera ID or IP address" required>
+                        </div>
+                        
+                        <h3 style="color: #607d8b; margin: 20px 0 10px 0; font-size: 18px;">Fire & Smoke Detection</h3>
+                        <div class="remember">
+                            <label><input type="checkbox" name="fire"> Fire Detection</label>
                         </div>
                         <div class="remember">
-                            <label><input type="checkbox" name="fire">Fire</label>
+                            <label><input type="checkbox" name="smoke"> Smoke Detection</label>
+                        </div>
+                        
+                        <h3 style="color: #607d8b; margin: 20px 0 10px 0; font-size: 18px;">Safety Gear Monitoring</h3>
+                        <div class="remember">
+                            <label><input type="checkbox" name="Safety_gear"> Basic Safety Gear Detection</label>
                         </div>
                         <div class="remember">
-                            <label><input type="checkbox" name="pose_alert">Pose Alert</label>
+                            <label><input type="checkbox" name="Enhanced_gear"> Enhanced PPE Compliance</label>
+                        </div>
+                        
+                        <h3 style="color: #607d8b; margin: 20px 0 10px 0; font-size: 18px;">Security & Access Control</h3>
+                        <div class="remember">
+                            <label><input type="checkbox" name="R_zone"> Restricted Zone Monitoring</label>
                         </div>
                         <div class="remember">
-                            <label><input type="checkbox" name="R_zone">Restricted Zone</label>
+                            <label><input type="checkbox" name="Intrusion"> Intrusion Detection</label>
                         </div>
+                        
+                        <h3 style="color: #607d8b; margin: 20px 0 10px 0; font-size: 18px;">Emergency Response</h3>
                         <div class="remember">
-                            <label><input type="checkbox" name="Safety_gear">Safety gear</label>
+                            <label><input type="checkbox" name="pose_alert"> Emergency Pose Alert (L-Pose)</label>
                         </div>
+                        
                         <div class="inputBx">
-                            <input type="submit" value="Submit" name="">
+                            <input type="submit" value="Configure Camera" name="">
                         </div>
+                        
                         <div class="present-cams">
-                            <h2>Present Cameras</h2>
+                            <h2>Configured Cameras</h2>
                             {% if cameras|length==0 %}
                             <div class="alert alert-dark" role="alert">
-                                       no camera records!
+                                No camera configurations found!
                             </div>
                             {% else %}
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>Camera ID</th>
-                                        <th>Fire Detection</th>
-                                        <th>Pose Alert</th>
-                                        <th>Restricted Zone</th>
-                                        <th>Safety Gear Detection</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for camera in cameras %}
-                                    <tr>
-                                        <td>{{ camera.cam_id }}</td>
-                                        <td>{{ "Yes" if camera.fire_detection else "No" }}</td>
-                                        <td>{{ "Yes" if camera.pose_alert else "No" }}</td>
-                                        <td>{{ "Yes" if camera.restricted_zone else "No" }}</td>
-                                        <td>{{ "Yes" if camera.safety_gear_detection else "No" }}</td>
-                                        <td>
-                                            <a href="/delete_camera/{{camera.id}}" type="button" class="btn btn-outline-dark btn-sm mx-1">Delete</button>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                    {% endif %}
-                                </tbody>
-                            </table>
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Camera ID</th>
+                                            <th>Fire</th>
+                                            <th>Smoke</th>
+                                            <th>Basic Gear</th>
+                                            <th>Enhanced PPE</th>
+                                            <th>Restricted Zone</th>
+                                            <th>Intrusion</th>
+                                            <th>Emergency</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for camera in cameras %}
+                                        <tr>
+                                            <td><strong>{{ camera.cam_id }}</strong></td>
+                                            <td>
+                                                <span class="badge {{ 'bg-success' if camera.fire_detection else 'bg-secondary' }}">
+                                                    {{ "ON" if camera.fire_detection else "OFF" }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge {{ 'bg-success' if camera.smoke_detection else 'bg-secondary' }}">
+                                                    {{ "ON" if camera.smoke_detection else "OFF" }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge {{ 'bg-success' if camera.safety_gear_detection else 'bg-secondary' }}">
+                                                    {{ "ON" if camera.safety_gear_detection else "OFF" }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge {{ 'bg-success' if camera.enhanced_gear_detection else 'bg-secondary' }}">
+                                                    {{ "ON" if camera.enhanced_gear_detection else "OFF" }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge {{ 'bg-success' if camera.restricted_zone else 'bg-secondary' }}">
+                                                    {{ "ON" if camera.restricted_zone else "OFF" }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge {{ 'bg-success' if camera.intrusion_detection else 'bg-secondary' }}">
+                                                    {{ "ON" if camera.intrusion_detection else "OFF" }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge {{ 'bg-success' if camera.pose_alert else 'bg-secondary' }}">
+                                                    {{ "ON" if camera.pose_alert else "OFF" }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <a href="/delete_camera/{{camera.id}}" 
+                                                   class="btn btn-outline-danger btn-sm"
+                                                   onclick="return confirm('Are you sure you want to delete this camera configuration?')">
+                                                    Delete
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% endif %}
                         </div>
                     </form>
                 </div>
             </div>
-           
         </section>
     </div>
-
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe"
