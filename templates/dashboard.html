@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IndustrialAI - Smart Safety Dashboard</title>
+    
+    <!-- CSS Libraries -->
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+
+<body>
+    <div class="wrapper">
+        {% include 'sidebar.html' %}
+        
+        <div class="main">
+            <!-- Header -->
+            <div class="dashboard-header">
+                <div class="container-fluid">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h1 class="dashboard-title">
+                                <i class="fas fa-shield-alt text-primary"></i>
+                                Safety Monitoring Dashboard
+                            </h1>
+                            <p class="dashboard-subtitle">Real-time AI-powered industrial safety monitoring</p>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <div class="system-status">
+                                <span class="status-indicator online"></span>
+                                <span class="status-text">System Online</span>
+                                <small class="text-muted d-block">Last updated: <span id="last-update">Just now</span></small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="container-fluid mt-4">
+                <div class="row g-4">
+                    <div class="col-xl-3 col-md-6">
+                        <div class="stat-card">
+                            <div class="stat-icon bg-primary">
+                                <i class="fas fa-video"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 class="stat-number">{{ stats.total_cameras }}</h3>
+                                <p class="stat-label">Active Cameras</p>
+                                <small class="stat-change text-success">
+                                    <i class="fas fa-arrow-up"></i> All systems operational
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-xl-3 col-md-6">
+                        <div class="stat-card">
+                            <div class="stat-icon bg-warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 class="stat-number">{{ stats.recent_alerts }}</h3>
+                                <p class="stat-label">Alerts (24h)</p>
+                                <small class="stat-change text-info">
+                                    <i class="fas fa-clock"></i> Recent activity
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-xl-3 col-md-6">
+                        <div class="stat-card">
+                            <div class="stat-icon bg-danger">
+                                <i class="fas fa-fire"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 class="stat-number">{{ stats.critical_alerts }}</h3>
+                                <p class="stat-label">Critical Alerts</p>
+                                <small class="stat-change text-danger">
+                                    <i class="fas fa-bolt"></i> Immediate attention
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-xl-3 col-md-6">
+                        <div class="stat-card">
+                            <div class="stat-icon bg-success">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 class="stat-number">98.5%</h3>
+                                <p class="stat-label">System Uptime</p>
+                                <small class="stat-change text-success">
+                                    <i class="fas fa-arrow-up"></i> Excellent performance
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Camera Feeds -->
+                <div class="row mt-5">
+                    <div class="col-12">
+                        <div class="card modern-card">
+                            <div class="card-header">
+                                <h4 class="card-title">
+                                    <i class="fas fa-camera text-primary"></i>
+                                    Live Camera Feeds
+                                </h4>
+                                <div class="card-actions">
+                                    <button class="btn btn-sm btn-outline-primary" onclick="refreshFeeds()">
+                                        <i class="fas fa-sync-alt"></i> Refresh
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                {% if cameras %}
+                                    <div class="camera-grid">
+                                        {% for camera in cameras %}
+                                        <div class="camera-feed-container">
+                                            <div class="camera-header">
+                                                <h6 class="camera-title">
+                                                    <i class="fas fa-video-camera"></i>
+                                                    Camera {{ camera.cam_id }}
+                                                </h6>
+                                                <div class="camera-status">
+                                                    <span class="status-dot online"></span>
+                                                    <span class="status-text">Live</span>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="camera-feed">
+                                                <iframe 
+                                                    src="/video_feed/{{ camera.cam_id }}" 
+                                                    class="video-frame"
+                                                    frameborder="0">
+                                                </iframe>
+                                                <div class="camera-overlay">
+                                                    <div class="detection-badges">
+                                                        {% if camera.fire_detection %}
+                                                            <span class="detection-badge fire">
+                                                                <i class="fas fa-fire"></i> Fire
+                                                            </span>
+                                                        {% endif %}
+                                                        {% if camera.smoke_detection %}
+                                                            <span class="detection-badge smoke">
+                                                                <i class="fas fa-smog"></i> Smoke
+                                                            </span>
+                                                        {% endif %}
+                                                        {% if camera.enhanced_gear_detection %}
+                                                            <span class="detection-badge ppe">
+                                                                <i class="fas fa-hard-hat"></i> PPE
+                                                            </span>
+                                                        {% endif %}
+                                                        {% if camera.intrusion_detection %}
+                                                            <span class="detection-badge intrusion">
+                                                                <i class="fas fa-shield-alt"></i> Security
+                                                            </span>
+                                                        {% endif %}
+                                                        {% if camera.leakage_detection %}
+                                                            <span class="detection-badge leakage">
+                                                                <i class="fas fa-tint"></i> Leakage
+                                                            </span>
+                                                        {% endif %}
+                                                        {% if camera.activity_monitoring %}
+                                                            <span class="detection-badge activity">
+                                                                <i class="fas fa-running"></i> Activity
+                                                            </span>
+                                                        {% endif %}
+                                                        {% if camera.defect_detection %}
+                                                            <span class="detection-badge defect">
+                                                                <i class="fas fa-search"></i> Quality
+                                                            </span>
+                                                        {% endif %}
+                                                        {% if camera.crowd_detection %}
+                                                            <span class="detection-badge crowd">
+                                                                <i class="fas fa-users"></i> Crowd
+                                                            </span>
+                                                        {% endif %}
+                                                        {% if camera.air_quality_monitoring %}
+                                                            <span class="detection-badge air">
+                                                                <i class="fas fa-wind"></i> Air Quality
+                                                            </span>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <div class="empty-state">
+                                        <div class="empty-icon">
+                                            <i class="fas fa-video-slash"></i>
+                                        </div>
+                                        <h5>No Cameras Configured</h5>
+                                        <p class="text-muted">Get started by adding your first camera to the monitoring system.</p>
+                                        <a href="/manage_camera" class="btn btn-primary">
+                                            <i class="fas fa-plus"></i> Add Camera
+                                        </a>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card modern-card">
+                            <div class="card-header">
+                                <h4 class="card-title">
+                                    <i class="fas fa-bolt text-warning"></i>
+                                    Quick Actions
+                                </h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="quick-actions">
+                                    <a href="/manage_camera" class="quick-action-btn">
+                                        <div class="action-icon bg-primary">
+                                            <i class="fas fa-camera"></i>
+                                        </div>
+                                        <div class="action-content">
+                                            <h6>Manage Cameras</h6>
+                                            <small>Configure detection settings</small>
+                                        </div>
+                                    </a>
+                                    
+                                    <a href="/notifications" class="quick-action-btn">
+                                        <div class="action-icon bg-warning">
+                                            <i class="fas fa-bell"></i>
+                                        </div>
+                                        <div class="action-content">
+                                            <h6>View Alerts</h6>
+                                            <small>Check recent notifications</small>
+                                        </div>
+                                    </a>
+                                    
+                                    <a href="/analytics" class="quick-action-btn">
+                                        <div class="action-icon bg-info">
+                                            <i class="fas fa-chart-bar"></i>
+                                        </div>
+                                        <div class="action-content">
+                                            <h6>Analytics</h6>
+                                            <small>View safety reports</small>
+                                        </div>
+                                    </a>
+                                    
+                                    <div class="quick-action-btn" onclick="exportReport()">
+                                        <div class="action-icon bg-success">
+                                            <i class="fas fa-download"></i>
+                                        </div>
+                                        <div class="action-content">
+                                            <h6>Export Report</h6>
+                                            <small>Download safety data</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/script_dash.js"></script>
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>

@@ -24,14 +24,14 @@
             </div>
             <div class="contentBx">
                 <div class="formBx">
-                    <h2>Camera Safety Configuration</h2>
+                    <h2>Advanced Camera Safety Configuration</h2>
                     <form action="/get_cam_details" method="POST">
                         <div class="inputBx">
                             <span>Camera ID</span>
                             <input type="text" name="Cam_id" placeholder="Enter camera ID or IP address" required>
                         </div>
                         
-                        <h3 style="color: #607d8b; margin: 20px 0 10px 0; font-size: 18px;">Fire & Smoke Detection</h3>
+                        <h3 style="color: #607d8b; margin: 20px 0 10px 0; font-size: 18px;">🔥 Fire & Smoke Detection</h3>
                         <div class="remember">
                             <label><input type="checkbox" name="fire"> Fire Detection</label>
                         </div>
@@ -39,7 +39,7 @@
                             <label><input type="checkbox" name="smoke"> Smoke Detection</label>
                         </div>
                         
-                        <h3 style="color: #607d8b; margin: 20px 0 10px 0; font-size: 18px;">Safety Gear Monitoring</h3>
+                        <h3 style="color: #607d8b; margin: 20px 0 10px 0; font-size: 18px;">🦺 Safety Gear Monitoring</h3>
                         <div class="remember">
                             <label><input type="checkbox" name="Safety_gear"> Basic Safety Gear Detection</label>
                         </div>
@@ -47,7 +47,7 @@
                             <label><input type="checkbox" name="Enhanced_gear"> Enhanced PPE Compliance</label>
                         </div>
                         
-                        <h3 style="color: #607d8b; margin: 20px 0 10px 0; font-size: 18px;">Security & Access Control</h3>
+                        <h3 style="color: #607d8b; margin: 20px 0 10px 0; font-size: 18px;">🛡️ Security & Access Control</h3>
                         <div class="remember">
                             <label><input type="checkbox" name="R_zone"> Restricted Zone Monitoring</label>
                         </div>
@@ -55,9 +55,26 @@
                             <label><input type="checkbox" name="Intrusion"> Intrusion Detection</label>
                         </div>
                         
-                        <h3 style="color: #607d8b; margin: 20px 0 10px 0; font-size: 18px;">Emergency Response</h3>
+                        <h3 style="color: #607d8b; margin: 20px 0 10px 0; font-size: 18px;">🚨 Emergency Response</h3>
                         <div class="remember">
                             <label><input type="checkbox" name="pose_alert"> Emergency Pose Alert (L-Pose)</label>
+                        </div>
+                        
+                        <h3 style="color: #607d8b; margin: 20px 0 10px 0; font-size: 18px;">🏭 Industrial Monitoring</h3>
+                        <div class="remember">
+                            <label><input type="checkbox" name="Leakage"> Leakage Detection (Oil/Gas/Water)</label>
+                        </div>
+                        <div class="remember">
+                            <label><input type="checkbox" name="Activity"> Worker Activity Monitoring</label>
+                        </div>
+                        <div class="remember">
+                            <label><input type="checkbox" name="Defect"> Defect Detection (Assembly Line)</label>
+                        </div>
+                        <div class="remember">
+                            <label><input type="checkbox" name="Crowd"> Crowd Density Monitoring</label>
+                        </div>
+                        <div class="remember">
+                            <label><input type="checkbox" name="Air_quality"> Air Quality Monitoring</label>
                         </div>
                         
                         <div class="inputBx">
@@ -72,17 +89,16 @@
                             </div>
                             {% else %}
                             <div class="table-responsive">
-                                <table class="table table-striped">
+                                <table class="table table-striped table-sm">
                                     <thead>
                                         <tr>
                                             <th>Camera ID</th>
                                             <th>Fire</th>
                                             <th>Smoke</th>
-                                            <th>Basic Gear</th>
-                                            <th>Enhanced PPE</th>
-                                            <th>Restricted Zone</th>
-                                            <th>Intrusion</th>
+                                            <th>PPE</th>
+                                            <th>Security</th>
                                             <th>Emergency</th>
+                                            <th>Industrial</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
@@ -91,39 +107,53 @@
                                         <tr>
                                             <td><strong>{{ camera.cam_id }}</strong></td>
                                             <td>
-                                                <span class="badge {{ 'bg-success' if camera.fire_detection else 'bg-secondary' }}">
-                                                    {{ "ON" if camera.fire_detection else "OFF" }}
-                                                </span>
+                                                {% if camera.fire_detection or camera.smoke_detection %}
+                                                    <span class="badge bg-success">ON</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">OFF</span>
+                                                {% endif %}
                                             </td>
                                             <td>
-                                                <span class="badge {{ 'bg-success' if camera.smoke_detection else 'bg-secondary' }}">
-                                                    {{ "ON" if camera.smoke_detection else "OFF" }}
-                                                </span>
+                                                {% if camera.smoke_detection %}
+                                                    <span class="badge bg-success">ON</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">OFF</span>
+                                                {% endif %}
                                             </td>
                                             <td>
-                                                <span class="badge {{ 'bg-success' if camera.safety_gear_detection else 'bg-secondary' }}">
-                                                    {{ "ON" if camera.safety_gear_detection else "OFF" }}
-                                                </span>
+                                                {% if camera.safety_gear_detection or camera.enhanced_gear_detection %}
+                                                    <span class="badge bg-success">ON</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">OFF</span>
+                                                {% endif %}
                                             </td>
                                             <td>
-                                                <span class="badge {{ 'bg-success' if camera.enhanced_gear_detection else 'bg-secondary' }}">
-                                                    {{ "ON" if camera.enhanced_gear_detection else "OFF" }}
-                                                </span>
+                                                {% if camera.restricted_zone or camera.intrusion_detection %}
+                                                    <span class="badge bg-success">ON</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">OFF</span>
+                                                {% endif %}
                                             </td>
                                             <td>
-                                                <span class="badge {{ 'bg-success' if camera.restricted_zone else 'bg-secondary' }}">
-                                                    {{ "ON" if camera.restricted_zone else "OFF" }}
-                                                </span>
+                                                {% if camera.pose_alert %}
+                                                    <span class="badge bg-success">ON</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">OFF</span>
+                                                {% endif %}
                                             </td>
                                             <td>
-                                                <span class="badge {{ 'bg-success' if camera.intrusion_detection else 'bg-secondary' }}">
-                                                    {{ "ON" if camera.intrusion_detection else "OFF" }}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <span class="badge {{ 'bg-success' if camera.pose_alert else 'bg-secondary' }}">
-                                                    {{ "ON" if camera.pose_alert else "OFF" }}
-                                                </span>
+                                                {% set industrial_count = 0 %}
+                                                {% if camera.leakage_detection %}{% set industrial_count = industrial_count + 1 %}{% endif %}
+                                                {% if camera.activity_monitoring %}{% set industrial_count = industrial_count + 1 %}{% endif %}
+                                                {% if camera.defect_detection %}{% set industrial_count = industrial_count + 1 %}{% endif %}
+                                                {% if camera.crowd_detection %}{% set industrial_count = industrial_count + 1 %}{% endif %}
+                                                {% if camera.air_quality_monitoring %}{% set industrial_count = industrial_count + 1 %}{% endif %}
+                                                
+                                                {% if industrial_count > 0 %}
+                                                    <span class="badge bg-success">{{ industrial_count }} Active</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">OFF</span>
+                                                {% endif %}
                                             </td>
                                             <td>
                                                 <a href="/delete_camera/{{camera.id}}" 
