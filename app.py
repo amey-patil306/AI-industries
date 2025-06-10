@@ -82,16 +82,21 @@ class SystemMetrics(db.Model):
     detection_accuracy = db.Column(db.Float, default=0.0)
 
 # Initialize detection models
-fire_det = fire_detection("models/fire.pt", conf=0.60)
-smoke_det = smoke_detection("models/fire.pt", conf=0.70)
-gear_det = gear_detection("models/gear.pt")
-enhanced_gear_det = enhanced_gear_detection("models/gear.pt", conf=0.75)
-intrusion_det = intrusion_detection(conf=0.60)
-leakage_det = leakage_detection(conf=0.65)
-activity_det = activity_monitoring(conf=0.70)
-defect_det = defect_detection(conf=0.80)
-crowd_det = crowd_detection(conf=0.60)
-air_quality_det = air_quality_detection()
+try:
+    fire_det = fire_detection("models/fire.pt", conf=0.60)
+    smoke_det = smoke_detection("models/fire.pt", conf=0.70)
+    gear_det = gear_detection("models/gear.pt")
+    enhanced_gear_det = enhanced_gear_detection("models/gear.pt", conf=0.75)
+    intrusion_det = intrusion_detection(conf=0.60)
+    leakage_det = leakage_detection(conf=0.65)
+    activity_det = activity_monitoring(conf=0.70)
+    defect_det = defect_detection(conf=0.80)
+    crowd_det = crowd_detection(conf=0.60)
+    air_quality_det = air_quality_detection()
+    print("✅ All detection models loaded successfully!")
+except Exception as e:
+    print(f"⚠️ Warning: Some detection models failed to load: {e}")
+    print("The system will continue with basic functionality.")
 
 @app.route('/')
 def index():
@@ -239,7 +244,8 @@ def notifications():
     try:
         alerts = Alert.query.filter_by(user_id=current_user.id).order_by(Alert.date_time.desc()).limit(100).all()
         for alert in alerts:
-            alert.frame_snapshot = base64.b64encode(alert.frame_snapshot).decode('utf-8')
+            if alert.frame_snapshot:
+                alert.frame_snapshot = base64.b64encode(alert.frame_snapshot).decode('utf-8')
         return render_template('notifications.html', alerts=alerts)
     except Exception as e:
         flash(f'Database error: {str(e)}. Please run database migration.')
@@ -430,115 +436,120 @@ def process_frames(camid, region, flag_r_zone=False, flag_pose_alert=False,
         frame = cv2.resize(frame, (1000, 580))
         original_frame = frame.copy()
 
-        # Fire Detection
-        if flag_fire:
-            results = fire_det.process(img=frame, flag=True)
-            if results[0]:
-                add_to_db(results, frame, "fire_detection", user_id, camid, 'critical', 
-                         'Fire detected in monitored area', 0.85)
+        try:
+            # Fire Detection
+            if flag_fire:
+                results = fire_det.process(img=frame, flag=True)
+                if results[0]:
+                    add_to_db(results, frame, "fire_detection", user_id, camid, 'critical', 
+                             'Fire detected in monitored area', 0.85)
 
-        # Smoke Detection
-        if flag_smoke:
-            results = smoke_det.process(img=frame, flag=True)
-            if hasattr(results, '__len__') and len(results) >= 3:
-                detection_found, boxes, types = results
-                if detection_found:
-                    description = f"Smoke/Fire detected: {', '.join(types)}"
-                    add_to_db((detection_found, boxes), frame, "smoke_detection", user_id, camid, 
-                             'high', description, 0.75)
+            # Smoke Detection
+            if flag_smoke:
+                results = smoke_det.process(img=frame, flag=True)
+                if hasattr(results, '__len__') and len(results) >= 3:
+                    detection_found, boxes, types = results
+                    if detection_found:
+                        description = f"Smoke/Fire detected: {', '.join(types)}"
+                        add_to_db((detection_found, boxes), frame, "smoke_detection", user_id, camid, 
+                                 'high', description, 0.75)
 
-        # Basic Gear Detection
-        if flag_gear:
-            results = gear_det.process(img=frame, flag=True)
-            if results[0]:
-                add_to_db(results, frame, "gear_violation", user_id, camid, 'medium', 
-                         'Safety gear compliance issue detected', 0.70)
+            # Basic Gear Detection
+            if flag_gear:
+                results = gear_det.process(img=frame, flag=True)
+                if results[0]:
+                    add_to_db(results, frame, "gear_violation", user_id, camid, 'medium', 
+                             'Safety gear compliance issue detected', 0.70)
 
-        # Enhanced Gear Detection
-        if flag_enhanced_gear:
-            results = enhanced_gear_det.process(img=frame, flag=True)
-            if results[0]:
-                compliance_data = results[2]
-                non_compliant = [r for r in compliance_data if not r['compliant']]
-                description = f"PPE violations: {len(non_compliant)} workers non-compliant"
-                add_to_db(results, frame, "ppe_violation", user_id, camid, 'high', description, 0.80)
+            # Enhanced Gear Detection
+            if flag_enhanced_gear:
+                results = enhanced_gear_det.process(img=frame, flag=True)
+                if results[0]:
+                    compliance_data = results[2] if len(results) > 2 else []
+                    non_compliant = [r for r in compliance_data if not r.get('compliant', True)]
+                    description = f"PPE violations: {len(non_compliant)} workers non-compliant"
+                    add_to_db(results, frame, "ppe_violation", user_id, camid, 'high', description, 0.80)
 
-        # Intrusion Detection
-        if flag_intrusion:
-            results = intrusion_det.process(img=frame, flag=True, restricted_zones=restricted_zones)
-            if results[0]:
-                intrusion_points = results[2]
-                description = f"Unauthorized entry detected: {len(intrusion_points)} intrusion(s)"
-                add_to_db(results, frame, "intrusion_alert", user_id, camid, 'critical', description, 0.75)
+            # Intrusion Detection
+            if flag_intrusion:
+                results = intrusion_det.process(img=frame, flag=True, restricted_zones=restricted_zones)
+                if results[0]:
+                    intrusion_points = results[2] if len(results) > 2 else []
+                    description = f"Unauthorized entry detected: {len(intrusion_points)} intrusion(s)"
+                    add_to_db(results, frame, "intrusion_alert", user_id, camid, 'critical', description, 0.75)
 
-        # Leakage Detection
-        if flag_leakage:
-            results = leakage_det.process(img=frame, flag=True)
-            if results[0]:
-                leak_type = results[2] if len(results) > 2 else 'Unknown'
-                description = f"Leakage detected: {leak_type}"
-                add_to_db(results, frame, "leakage_alert", user_id, camid, 'high', description, 0.70)
+            # Leakage Detection
+            if flag_leakage:
+                results = leakage_det.process(img=frame, flag=True)
+                if results[0]:
+                    leak_type = results[2] if len(results) > 2 else 'Unknown'
+                    description = f"Leakage detected: {leak_type}"
+                    add_to_db(results, frame, "leakage_alert", user_id, camid, 'high', description, 0.70)
 
-        # Activity Monitoring
-        if flag_activity:
-            results = activity_det.process(img=frame, flag=True)
-            if results[0]:
-                activities = results[2] if len(results) > 2 else []
-                description = f"Activities detected: {', '.join(activities)}"
-                add_to_db(results, frame, "activity_alert", user_id, camid, 'low', description, 0.65)
+            # Activity Monitoring
+            if flag_activity:
+                results = activity_det.process(img=frame, flag=True)
+                if results[0]:
+                    activities = results[2] if len(results) > 2 else []
+                    description = f"Activities detected: {', '.join(activities)}"
+                    add_to_db(results, frame, "activity_alert", user_id, camid, 'low', description, 0.65)
 
-        # Defect Detection
-        if flag_defect:
-            results = defect_det.process(img=frame, flag=True)
-            if results[0]:
-                defect_count = len(results[1]) if len(results) > 1 else 1
-                description = f"Product defects detected: {defect_count} items"
-                add_to_db(results, frame, "defect_alert", user_id, camid, 'medium', description, 0.80)
+            # Defect Detection
+            if flag_defect:
+                results = defect_det.process(img=frame, flag=True)
+                if results[0]:
+                    defect_count = len(results[1]) if len(results) > 1 else 1
+                    description = f"Product defects detected: {defect_count} items"
+                    add_to_db(results, frame, "defect_alert", user_id, camid, 'medium', description, 0.80)
 
-        # Crowd Detection
-        if flag_crowd:
-            results = crowd_det.process(img=frame, flag=True)
-            if results[0]:
-                crowd_density = results[2] if len(results) > 2 else 'High'
-                description = f"Crowd density alert: {crowd_density} density detected"
-                add_to_db(results, frame, "crowd_alert", user_id, camid, 'medium', description, 0.70)
+            # Crowd Detection
+            if flag_crowd:
+                results = crowd_det.process(img=frame, flag=True)
+                if results[0]:
+                    crowd_density = results[2] if len(results) > 2 else 'High'
+                    description = f"Crowd density alert: {crowd_density} density detected"
+                    add_to_db(results, frame, "crowd_alert", user_id, camid, 'medium', description, 0.70)
 
-        # Air Quality Monitoring
-        if flag_air_quality:
-            results = air_quality_det.process(img=frame, flag=True)
-            if results[0]:
-                air_quality = results[2] if len(results) > 2 else 'Poor'
-                description = f"Air quality alert: {air_quality} air quality detected"
-                add_to_db(results, frame, "air_quality_alert", user_id, camid, 'medium', description, 0.60)
+            # Air Quality Monitoring
+            if flag_air_quality:
+                results = air_quality_det.process(img=frame, flag=True)
+                if results[0]:
+                    air_quality = results[2] if len(results) > 2 else 'Poor'
+                    description = f"Air quality alert: {air_quality} air quality detected"
+                    add_to_db(results, frame, "air_quality_alert", user_id, camid, 'medium', description, 0.60)
 
-        # L-pose Detection (Emergency Alert)
-        if flag_pose_alert:
-            pose_frame, detected = detect_l_pose(frame.copy())
-            if detected:
-                with app.app_context():
-                    try:
-                        latest_alert = Alert.query.filter_by(
-                            alert_type="emergency_pose", 
-                            user_id=user_id,
-                            camera_id=camid
-                        ).order_by(Alert.date_time.desc()).first()
-                        
-                        if (latest_alert is None) or ((datetime.now() - latest_alert.date_time) > timedelta(minutes=1)):
-                            new_alert = Alert(
-                                date_time=datetime.now(), 
-                                alert_type="emergency_pose",
-                                severity='critical',
-                                description='Emergency L-pose detected - immediate assistance required',
-                                frame_snapshot=cv2.imencode('.jpg', pose_frame)[1].tobytes(),
+            # L-pose Detection (Emergency Alert)
+            if flag_pose_alert:
+                pose_frame, detected = detect_l_pose(frame.copy())
+                if detected:
+                    with app.app_context():
+                        try:
+                            latest_alert = Alert.query.filter_by(
+                                alert_type="emergency_pose", 
                                 user_id=user_id,
-                                camera_id=camid,
-                                confidence=0.90
-                            )
-                            db.session.add(new_alert)
-                            db.session.commit()
-                    except Exception as e:
-                        print(f"Error adding pose alert: {e}")
-            frame = pose_frame
+                                camera_id=camid
+                            ).order_by(Alert.date_time.desc()).first()
+                            
+                            if (latest_alert is None) or ((datetime.now() - latest_alert.date_time) > timedelta(minutes=1)):
+                                new_alert = Alert(
+                                    date_time=datetime.now(), 
+                                    alert_type="emergency_pose",
+                                    severity='critical',
+                                    description='Emergency L-pose detected - immediate assistance required',
+                                    frame_snapshot=cv2.imencode('.jpg', pose_frame)[1].tobytes(),
+                                    user_id=user_id,
+                                    camera_id=camid,
+                                    confidence=0.90
+                                )
+                                db.session.add(new_alert)
+                                db.session.commit()
+                        except Exception as e:
+                            print(f"Error adding pose alert: {e}")
+                frame = pose_frame
+
+        except Exception as e:
+            print(f"Error in detection processing: {e}")
+            # Continue with basic frame display even if detection fails
 
         # Add timestamp and camera info
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -561,9 +572,9 @@ if __name__ == "__main__":
     with app.app_context():
         try:
             db.create_all()
-            print("Database tables created successfully!")
+            print("✅ Database tables created successfully!")
         except Exception as e:
-            print(f"Database creation error: {e}")
+            print(f"❌ Database creation error: {e}")
             print("Please run the migration script: python migrate_database.py")
     
     app.run(debug=True)
